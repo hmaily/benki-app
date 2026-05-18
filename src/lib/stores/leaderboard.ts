@@ -1,21 +1,45 @@
 import { create } from 'zustand';
-import { seedLeaderboard } from '../seed';
+
+import { toLeaderboardEntry } from '../mappers';
+import { supabase } from '../supabase';
 import type { LeaderboardEntry, LeaderboardRange } from '../types';
+import { errorMessage } from '../utils/errors';
+
+type Status = 'idle' | 'loading' | 'ready' | 'error';
 
 interface LeaderboardState {
   range: LeaderboardRange;
-  entries: Record<LeaderboardRange, LeaderboardEntry[]>;
+  entries: LeaderboardEntry[];
+  status: Status;
+  error: string | null;
   setRange: (range: LeaderboardRange) => void;
+  load: () => Promise<void>;
+  reset: () => void;
 }
 
-// All-time is the same set but scaled up — keeps mock data plausible.
-const allTime: LeaderboardEntry[] = seedLeaderboard
-  .map((e) => ({ ...e, xp: Math.round(e.xp * 3.4) }))
-  .sort((a, b) => b.xp - a.xp)
-  .map((e, idx) => ({ ...e, rank: idx + 1 }));
-
-export const useLeaderboard = create<LeaderboardState>((set) => ({
+export const useLeaderboard = create<LeaderboardState>((set, get) => ({
   range: 'weekly',
-  entries: { weekly: seedLeaderboard, allTime },
-  setRange: (range) => set({ range }),
+  entries: [],
+  status: 'idle',
+  error: null,
+
+  setRange: (range) => {
+    set({ range });
+    void get().load();
+  },
+
+  load: async () => {
+    set({ status: 'loading', error: null });
+    try {
+      const { data, error } = await supabase.rpc('get_leaderboard', {
+        p_range: get().range === 'weekly' ? 'weekly' : 'all_time',
+      });
+      if (error) throw error;
+      set({ entries: data.map(toLeaderboardEntry), status: 'ready' });
+    } catch (e) {
+      set({ status: 'error', error: errorMessage(e) });
+    }
+  },
+
+  reset: () => set({ entries: [], status: 'idle', error: null, range: 'weekly' }),
 }));

@@ -1,28 +1,119 @@
 import { create } from 'zustand';
-import { seedFriendRequests, seedFriends } from '../seed';
+
+import { toFriend, toFriendRequest } from '../mappers';
+import { supabase } from '../supabase';
 import type { Friend, FriendRequest } from '../types';
+import { errorMessage } from '../utils/errors';
+import { currentUserId } from './auth';
+
+type Status = 'idle' | 'loading' | 'ready' | 'error';
 
 interface FriendsState {
   friends: Friend[];
   requests: FriendRequest[];
-  acceptRequest: (id: string) => void;
-  declineRequest: (id: string) => void;
+  status: Status;
+  error: string | null;
+  load: () => Promise<void>;
+  acceptRequest: (requestId: string) => Promise<void>;
+  declineRequest: (requestId: string) => Promise<void>;
+  reset: () => void;
+}
+
+async function fetchFriends(userId: string): Promise<Friend[]> {
+  const { data: edges, error: edgesError } = await supabase
+    .from('friendships')
+    .select('friend_id')
+    .eq('user_id', userId);
+  if (edgesError) throw edgesError;
+
+  const friendIds = edges.map((e) => e.friend_id);
+  if (friendIds.length === 0) return [];
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, name, xp, avatar_url')
+    .in('id', friendIds);
+  if (profilesError) throw profilesError;
+
+  return profiles.map(toFriend).sort((a, b) => b.xp - a.xp);
+}
+
+async function fetchRequests(userId: string): Promise<FriendRequest[]> {
+  const { data: rows, error: rowsError } = await supabase
+    .from('friend_requests')
+    .select('id, from_user')
+    .eq('to_user', userId)
+    .eq('status', 'pending');
+  if (rowsError) throw rowsError;
+  if (rows.length === 0) return [];
+
+  const senderIds = rows.map((r) => r.from_user);
+  const { data: senders, error: sendersError } = await supabase
+    .from('profiles')
+    .select('id, name, avatar_url')
+    .in('id', senderIds);
+  if (sendersError) throw sendersError;
+
+  const byId = new Map(senders.map((s) => [s.id, s]));
+  return rows
+    .map((r) => {
+      const sender = byId.get(r.from_user);
+      return sender ? toFriendRequest(r.id, sender) : null;
+    })
+    .filter((r): r is FriendRequest => r !== null);
 }
 
 export const useFriends = create<FriendsState>((set, get) => ({
-  friends: seedFriends,
-  requests: seedFriendRequests,
-  acceptRequest: (id) => {
-    const req = get().requests.find((r) => r.id === id);
-    if (!req) return;
-    set({
-      requests: get().requests.filter((r) => r.id !== id),
-      friends: [
-        { id: req.id, name: req.name, xp: 0, avatarSeed: req.avatarSeed },
-        ...get().friends,
-      ],
-    });
+  friends: [],
+  requests: [],
+  status: 'idle',
+  error: null,
+
+  load: async () => {
+    const userId = currentUserId();
+    if (!userId) return;
+
+    set({ status: 'loading', error: null });
+    try {
+      const [friends, requests] = await Promise.all([
+        fetchFriends(userId),
+        fetchRequests(userId),
+      ]);
+      set({ friends, requests, status: 'ready' });
+    } catch (e) {
+      set({ status: 'error', error: errorMessage(e) });
+    }
   },
-  declineRequest: (id) =>
-    set({ requests: get().requests.filter((r) => r.id !== id) }),
+
+  acceptRequest: async (requestId) => {
+    const prevRequests = get().requests;
+    set({ requests: prevRequests.filter((r) => r.id !== requestId) }); // optimistic
+
+    const { error } = await supabase.rpc('accept_friend_request', {
+      p_request_id: requestId,
+    });
+    if (error) {
+      set({ requests: prevRequests }); // rollback
+      throw error;
+    }
+    // Pull in the freshly added friend.
+    const userId = currentUserId();
+    if (userId) set({ friends: await fetchFriends(userId) });
+  },
+
+  declineRequest: async (requestId) => {
+    const prevRequests = get().requests;
+    set({ requests: prevRequests.filter((r) => r.id !== requestId) }); // optimistic
+
+    const { error } = await supabase
+      .from('friend_requests')
+      .update({ status: 'declined' })
+      .eq('id', requestId);
+    if (error) {
+      set({ requests: prevRequests }); // rollback
+      throw error;
+    }
+  },
+
+  reset: () => set({ friends: [], requests: [], status: 'idle', error: null }),
 }));
