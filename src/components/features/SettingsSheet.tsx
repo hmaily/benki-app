@@ -1,10 +1,11 @@
 import { Bell, LogOut, ShieldCheck, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button, Divider, Input, Sheet, Text } from '../ui';
-import { useAuth } from '@/lib/stores/auth';
+import { signOut } from '@/lib/auth';
 import { useProfile } from '@/lib/stores/profile';
+import { errorMessage } from '@/lib/utils/errors';
 import { colors, radius, spacing } from '@/theme';
 
 interface SettingsSheetProps {
@@ -15,18 +16,28 @@ interface SettingsSheetProps {
 export function SettingsSheet({ visible, onClose }: SettingsSheetProps) {
   const profile = useProfile((s) => s.profile);
   const rename = useProfile((s) => s.rename);
-  const signOut = useAuth((s) => s.signOut);
-  const [draftName, setDraftName] = useState(profile.name);
+  const [draftName, setDraftName] = useState(profile?.name ?? '');
+  const [saving, setSaving] = useState(false);
 
   const handleSignOut = () => {
     onClose();
-    // The (tabs) layout watches isAuthed and redirects to /sign-in.
-    signOut();
+    // The auth listener flips status -> signedOut; route guards redirect.
+    void signOut().catch((e) => Alert.alert('Sign out failed', errorMessage(e)));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const next = draftName.trim();
-    if (next && next !== profile.name) rename(next);
+    if (next && next !== profile?.name) {
+      setSaving(true);
+      try {
+        await rename(next);
+      } catch (e) {
+        Alert.alert('Could not save', errorMessage(e));
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    }
     onClose();
   };
 
@@ -63,9 +74,12 @@ export function SettingsSheet({ visible, onClose }: SettingsSheetProps) {
       </Pressable>
 
       <Pressable
-        onPress={() => {
-          // Placeholder for delete-account flow.
-        }}
+        onPress={() =>
+          Alert.alert(
+            'Delete account',
+            'Account deletion will be available soon. For now, contact support to remove your account and data.',
+          )
+        }
         style={styles.danger}
         accessibilityRole="button"
       >
@@ -75,7 +89,14 @@ export function SettingsSheet({ visible, onClose }: SettingsSheetProps) {
         </Text>
       </Pressable>
 
-      <Button label="Save" size="lg" fullWidth style={styles.save} onPress={handleSave} />
+      <Button
+        label="Save"
+        size="lg"
+        fullWidth
+        loading={saving}
+        style={styles.save}
+        onPress={handleSave}
+      />
     </Sheet>
   );
 }

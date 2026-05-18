@@ -18,14 +18,17 @@ export function FriendRequestCard({ request, onAccept, onDecline }: FriendReques
   return (
     <Card padding="md" tone="flat">
       <View style={styles.row}>
-        <Avatar name={request.name} seed={request.avatarSeed} size={40} />
+        <Avatar
+          name={request.name}
+          seed={request.fromUserId}
+          size={40}
+          source={request.avatarUrl ? { uri: request.avatarUrl } : undefined}
+        />
         <View style={styles.body}>
           <Text variant="titleSm">{request.name}</Text>
-          {request.mutualCount ? (
-            <Text variant="caption" color={colors.textMuted}>
-              {request.mutualCount} mutual friend{request.mutualCount === 1 ? '' : 's'}
-            </Text>
-          ) : null}
+          <Text variant="caption" color={colors.textMuted}>
+            wants to study with you
+          </Text>
         </View>
         <View style={styles.actions}>
           <Button
