@@ -19,8 +19,8 @@ type LeaderboardRow = Database['public']['Functions']['get_leaderboard']['Return
 
 const LEAGUE_KEYS: readonly LeagueKey[] = ['espresso', 'latte', 'cappuccino', 'mocha'];
 
-function toLeagueKey(value: string): LeagueKey {
-  return (LEAGUE_KEYS as readonly string[]).includes(value)
+function toLeagueKey(value: string | null): LeagueKey {
+  return value && (LEAGUE_KEYS as readonly string[]).includes(value)
     ? (value as LeagueKey)
     : 'espresso';
 }
