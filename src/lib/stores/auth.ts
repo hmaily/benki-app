@@ -1,23 +1,45 @@
+import type { Session } from '@supabase/supabase-js';
 import { create } from 'zustand';
-import type { AuthProvider } from '../types';
+
+import { supabase } from '../supabase';
+
+type AuthStatus = 'loading' | 'authed' | 'signedOut';
 
 interface AuthState {
-  isAuthed: boolean;
-  provider: AuthProvider | null;
-  isAuthing: boolean;
-  signIn: (provider: AuthProvider) => Promise<void>;
-  signOut: () => void;
+  status: AuthStatus;
+  session: Session | null;
+  userId: string | null;
+  /** Hydrate from stored session and subscribe to auth changes. Returns an unsubscribe fn. */
+  init: () => () => void;
 }
 
 export const useAuth = create<AuthState>((set) => ({
-  isAuthed: false,
-  provider: null,
-  isAuthing: false,
-  signIn: async (provider) => {
-    set({ isAuthing: true });
-    // Simulated provider handshake
-    await new Promise((r) => setTimeout(r, 650));
-    set({ isAuthed: true, provider, isAuthing: false });
+  status: 'loading',
+  session: null,
+  userId: null,
+
+  init: () => {
+    void supabase.auth.getSession().then(({ data }) => {
+      set({
+        session: data.session,
+        userId: data.session?.user.id ?? null,
+        status: data.session ? 'authed' : 'signedOut',
+      });
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      set({
+        session,
+        userId: session?.user.id ?? null,
+        status: session ? 'authed' : 'signedOut',
+      });
+    });
+
+    return () => data.subscription.unsubscribe();
   },
-  signOut: () => set({ isAuthed: false, provider: null }),
 }));
+
+/** Current user id outside React (for store actions). */
+export function currentUserId(): string | null {
+  return useAuth.getState().userId;
+}
