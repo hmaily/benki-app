@@ -1,28 +1,29 @@
 import { Image } from 'expo-image';
-import { Mail } from 'lucide-react-native';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '../ui/Text';
 import { colors, radius, shadow, spacing } from '@/theme';
-import type { AuthProvider } from '@/lib/types';
 
 interface ProviderButtonProps {
-  provider: AuthProvider;
   label: string;
   onPress: () => void;
+  /** Logo image source (e.g. require('../../assets/oauth/google.png')). */
+  logo?: number;
+  /** Lucide icon, used when no logo image is provided. */
+  icon?: React.ReactNode;
   loading?: boolean;
   disabled?: boolean;
 }
 
-const LOGO: Partial<Record<AuthProvider, ReturnType<typeof require>>> = {
-  google: require('../../../assets/oauth/google.png'),
-  notion: require('../../../assets/oauth/notion.png'),
-  onenote: require('../../../assets/oauth/onenote.png'),
-};
-
-export function ProviderButton({ provider, label, onPress, loading, disabled }: ProviderButtonProps) {
+export function ProviderButton({
+  label,
+  onPress,
+  logo,
+  icon,
+  loading,
+  disabled,
+}: ProviderButtonProps) {
   const isDisabled = disabled || loading;
-  const logo = LOGO[provider];
 
   return (
     <Pressable
@@ -37,10 +38,12 @@ export function ProviderButton({ provider, label, onPress, loading, disabled }: 
       ]}
     >
       <View style={styles.logoWrap}>
-        {logo ? (
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.text} />
+        ) : logo ? (
           <Image source={logo} style={styles.logo} contentFit="contain" />
         ) : (
-          <Mail size={20} color={colors.text} />
+          icon
         )}
       </View>
       <Text variant="button" color={colors.text}>
