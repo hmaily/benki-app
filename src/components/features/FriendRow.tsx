@@ -17,7 +17,12 @@ interface FriendRowProps {
 export function FriendRow({ friend, onMessage, onAdd }: FriendRowProps) {
   return (
     <View style={styles.row}>
-      <Avatar name={friend.name} seed={friend.avatarSeed} size={44} online={friend.online} />
+      <Avatar
+        name={friend.name}
+        seed={friend.id}
+        size={44}
+        source={friend.avatarUrl ? { uri: friend.avatarUrl } : undefined}
+      />
       <View style={styles.body}>
         <Text variant="titleSm">{friend.name}</Text>
         <Text variant="bodySm" color={colors.textMuted}>

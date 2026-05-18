@@ -2,12 +2,13 @@ import { addHours, setHours, setMinutes, setSeconds, setMilliseconds } from 'dat
 import { useRouter } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DatePickerInline, TopBar } from '@/components/features';
 import { Button, IconButton, Input, Stepper, Text } from '@/components/ui';
 import { useTasks } from '@/lib/stores/tasks';
+import { errorMessage } from '@/lib/utils/errors';
 import { colors, spacing } from '@/theme';
 
 const XP_STEP = 25;
@@ -31,6 +32,7 @@ export default function NewTaskScreen() {
   const [due, setDue] = useState<Date>(defaultDue);
   const [xp, setXp] = useState(DEFAULT_XP);
   const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const trimmedTitle = title.trim();
   const errors = useMemo(() => {
@@ -43,16 +45,22 @@ export default function NewTaskScreen() {
 
   const canSubmit = Object.keys(errors).length === 0;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitted(true);
     if (!canSubmit) return;
-    addTask({
-      title: trimmedTitle,
-      notes: notes.trim() || undefined,
-      dueAt: due.toISOString(),
-      xp,
-    });
-    router.back();
+    setSaving(true);
+    try {
+      await addTask({
+        title: trimmedTitle,
+        notes: notes.trim() || undefined,
+        dueAt: due.toISOString(),
+        xp,
+      });
+      router.back();
+    } catch (e) {
+      Alert.alert('Could not add task', errorMessage(e));
+      setSaving(false);
+    }
   };
 
   return (
@@ -120,7 +128,13 @@ export default function NewTaskScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: spacing.base + insets.bottom }]}>
-        <Button label="Add Task" size="lg" fullWidth onPress={handleSubmit} />
+        <Button
+          label="Add Task"
+          size="lg"
+          fullWidth
+          loading={saving}
+          onPress={handleSubmit}
+        />
       </View>
     </KeyboardAvoidingView>
   );

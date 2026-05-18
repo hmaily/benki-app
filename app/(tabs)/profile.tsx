@@ -1,22 +1,37 @@
+import { useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import { Settings as SettingsIcon, Sparkles } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { LeagueBanner, SettingsSheet, TopBar } from '@/components/features';
-import { Button, Card, Text } from '@/components/ui';
+import { ErrorState, LeagueBanner, SettingsSheet, TopBar } from '@/components/features';
+import { Button, Card, Skeleton, Text } from '@/components/ui';
+import { leagueProgress } from '@/lib/leagues';
 import { useProfile } from '@/lib/stores/profile';
 import { useTasks } from '@/lib/stores/tasks';
-import { colors, spacing } from '@/theme';
 import { formatXP } from '@/lib/utils/format';
-import { leagueProgress } from '@/lib/leagues';
+import { colors, spacing } from '@/theme';
 
 export default function ProfileScreen() {
   const profile = useProfile((s) => s.profile);
-  const tasks = useTasks((s) => s.tasks.data);
+  const profileStatus = useProfile((s) => s.status);
+  const profileError = useProfile((s) => s.error);
+  const loadProfile = useProfile((s) => s.load);
+
+  const tasks = useTasks((s) => s.items);
+  const loadTasks = useTasks((s) => s.load);
+  const tasksStatus = useTasks((s) => s.status);
+
   const insets = useSafeAreaInsets();
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (profileStatus === 'idle') void loadProfile();
+      if (tasksStatus === 'idle') void loadTasks();
+    }, [profileStatus, loadProfile, tasksStatus, loadTasks]),
+  );
 
   const stats = useMemo(() => {
     const completed = tasks.filter((t) => t.status === 'completed').length;
@@ -25,6 +40,28 @@ export default function ProfileScreen() {
     const completionRate = total ? Math.round((completed / total) * 100) : 0;
     return { completed, missed, completionRate };
   }, [tasks]);
+
+  if (profileStatus === 'error') {
+    return (
+      <View style={styles.flex}>
+        <TopBar title="Profile" />
+        <ErrorState message={profileError ?? undefined} onRetry={loadProfile} />
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.flex}>
+        <TopBar title="Profile" />
+        <View style={[styles.scroll, styles.loadingWrap]}>
+          <Skeleton width={96} height={96} rounded={48} />
+          <Skeleton width={160} height={22} />
+          <Skeleton width="100%" height={120} rounded={16} />
+        </View>
+      </View>
+    );
+  }
 
   const { current } = leagueProgress(profile.xp);
 
@@ -35,15 +72,21 @@ export default function ProfileScreen() {
         <View style={styles.hero}>
           <View style={styles.avatarCircle}>
             <Image
-              source={require('../../assets/coffee-cup.png')}
-              style={styles.avatarImg}
-              contentFit="contain"
+              source={
+                profile.avatarUrl
+                  ? { uri: profile.avatarUrl }
+                  : require('../../assets/coffee-cup.png')
+              }
+              style={profile.avatarUrl ? styles.avatarFill : styles.avatarImg}
+              contentFit={profile.avatarUrl ? 'cover' : 'contain'}
             />
           </View>
           <Text variant="titleLg">{profile.name}</Text>
-          <Text variant="body" color={colors.textMuted}>
-            {profile.email}
-          </Text>
+          {profile.email ? (
+            <Text variant="body" color={colors.textMuted}>
+              {profile.email}
+            </Text>
+          ) : null}
         </View>
 
         <Card style={styles.xpCard} tone="surface">
@@ -111,6 +154,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.base,
     gap: spacing.base,
   },
+  loadingWrap: { alignItems: 'center', gap: spacing.base },
   hero: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.base },
   avatarCircle: {
     width: 96,
@@ -122,8 +166,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     borderWidth: 2,
     borderColor: colors.brandSurface,
+    overflow: 'hidden',
   },
   avatarImg: { width: 64, height: 64 },
+  avatarFill: { width: 96, height: 96 },
   xpCard: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.lg },
   xpCaption: { textTransform: 'uppercase', letterSpacing: 0.5 },
   xpRow: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.xs },

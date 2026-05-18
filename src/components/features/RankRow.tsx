@@ -25,7 +25,12 @@ export function RankRow({ entry }: RankRowProps) {
           </Text>
         )}
       </View>
-      <Avatar name={entry.name} seed={entry.avatarSeed} size={40} />
+      <Avatar
+        name={entry.name}
+        seed={entry.id}
+        size={40}
+        source={entry.avatarUrl ? { uri: entry.avatarUrl } : undefined}
+      />
       <View style={styles.body}>
         <Text variant="titleSm">{entry.name}</Text>
         {entry.isMe ? (
