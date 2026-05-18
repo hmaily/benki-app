@@ -56,10 +56,18 @@ export default function NewTaskScreen() {
         dueAt: due.toISOString(),
         xp,
       });
-      router.back();
+      dismiss();
     } catch (e) {
       Alert.alert('Could not add task', errorMessage(e));
       setSaving(false);
+    }
+  };
+
+  const dismiss = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
     }
   };
 
@@ -75,7 +83,7 @@ export default function NewTaskScreen() {
             accessibilityLabel="Back"
             variant="plain"
             size={36}
-            onPress={() => router.back()}
+            onPress={dismiss}
           >
             <ChevronLeft size={22} color={colors.text} />
           </IconButton>
