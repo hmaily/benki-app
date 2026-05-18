@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Tabs, useRouter } from 'expo-router';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import { Award, Home, Plus, User, Users } from 'lucide-react-native';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,8 +12,9 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  // The root layout redirects signed-out users; render nothing meanwhile.
-  if (status !== 'authed') return null;
+  // Guard the tab group: bounce signed-out users to sign-in.
+  if (status === 'loading') return null;
+  if (status === 'signedOut') return <Redirect href="/sign-in" />;
 
   const openNewTask = () => {
     if (Platform.OS !== 'web') {

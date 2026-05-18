@@ -1,5 +1,6 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Image } from 'expo-image';
+import { Redirect } from 'expo-router';
 import { Mail } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import {
@@ -22,6 +23,7 @@ import {
   signInWithGoogle,
   signUpWithEmail,
 } from '@/lib/auth';
+import { useAuth } from '@/lib/stores/auth';
 import { errorMessage } from '@/lib/utils/errors';
 import { colors, radius, spacing } from '@/theme';
 
@@ -29,6 +31,7 @@ type Mode = 'signin' | 'signup';
 type Pending = 'apple' | 'google' | 'email' | null;
 
 export default function SignIn() {
+  const authStatus = useAuth((s) => s.status);
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -82,6 +85,9 @@ export default function SignIn() {
   }
 
   const busy = pending !== null;
+
+  // Once signed in, leave the auth screen for the app.
+  if (authStatus === 'authed') return <Redirect href="/(tabs)" />;
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safe}>
