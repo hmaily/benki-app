@@ -6,7 +6,7 @@ export interface Task {
   notes?: string;
   dueAt: string; // ISO timestamp
   xp: number;
-  status: TaskStatus;
+  status: TaskStatus; // derived from completedAt + dueAt, not stored
   completedAt?: string;
 }
 
@@ -14,15 +14,14 @@ export interface Friend {
   id: string;
   name: string;
   xp: number;
-  avatarSeed: string; // for deterministic initials/color
-  online?: boolean;
+  avatarUrl: string | null;
 }
 
 export interface FriendRequest {
   id: string;
+  fromUserId: string;
   name: string;
-  mutualCount?: number;
-  avatarSeed: string;
+  avatarUrl: string | null;
 }
 
 export interface LeaderboardEntry {
@@ -30,14 +29,16 @@ export interface LeaderboardEntry {
   rank: number;
   name: string;
   xp: number;
-  isMe?: boolean;
-  avatarSeed: string;
+  isMe: boolean;
+  avatarUrl: string | null;
 }
 
 export type LeaderboardRange = 'weekly' | 'allTime';
 
+export type LeagueKey = 'espresso' | 'latte' | 'cappuccino' | 'mocha';
+
 export type League = {
-  key: 'espresso' | 'latte' | 'cappuccino' | 'mocha';
+  key: LeagueKey;
   label: string;
   minXP: number;
 };
@@ -45,10 +46,11 @@ export type League = {
 export interface Profile {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  avatarUrl: string | null;
   xp: number;
-  league: League['key'];
+  league: LeagueKey;
   joinedAt: string;
 }
 
-export type AuthProvider = 'google' | 'notion' | 'onenote' | 'email';
+export type AuthProvider = 'google' | 'apple' | 'email';
