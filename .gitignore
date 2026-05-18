@@ -4,6 +4,7 @@ dist/
 web-build/
 .DS_Store
 *.log
+.env
 .env*.local
 ios/
 android/
