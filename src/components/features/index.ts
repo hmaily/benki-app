@@ -10,4 +10,6 @@ export { RankRow } from './RankRow';
 export { SectionHeader } from './SectionHeader';
 export { SettingsSheet } from './SettingsSheet';
 export { TaskCard } from './TaskCard';
+export { TaskForm } from './TaskForm';
+export type { TaskFormInitial, TaskFormSubmit } from './TaskForm';
 export { TopBar } from './TopBar';
