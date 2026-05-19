@@ -127,6 +127,7 @@ export default function HomeScreen() {
                       task={t}
                       onToggleComplete={handleToggle}
                       onReschedule={handleReschedule}
+                      onPress={(id) => router.push(`/task/${id}`)}
                     />
                   ))}
                 </View>
@@ -143,6 +144,7 @@ export default function HomeScreen() {
                       task={t}
                       onToggleComplete={handleToggle}
                       onReschedule={handleReschedule}
+                      onPress={(id) => router.push(`/task/${id}`)}
                     />
                   ))}
                 </View>
