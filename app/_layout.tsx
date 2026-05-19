@@ -73,6 +73,7 @@ export default function RootLayout() {
             name="new-task"
             options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen name="task/[id]" options={{ animation: 'slide_from_right' }} />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

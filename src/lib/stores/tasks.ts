@@ -21,6 +21,7 @@ interface TasksState {
   error: string | null;
   load: () => Promise<void>;
   add: (input: NewTaskInput) => Promise<void>;
+  update: (id: string, input: NewTaskInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
   /** Toggle completion; returns the updated task (status tells caller if XP changed). */
   toggleComplete: (id: string) => Promise<Task | null>;
@@ -63,6 +64,19 @@ export const useTasks = create<TasksState>((set, get) => ({
     if (error) throw error;
 
     set({ items: [...get().items, toTask(data)].sort(sortByDue) });
+  },
+
+  update: async (id, { title, notes, dueAt, xp }) => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ title, notes: notes ?? null, due_at: dueAt, xp })
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+
+    const updated = toTask(data);
+    set({ items: get().items.map((t) => (t.id === id ? updated : t)).sort(sortByDue) });
   },
 
   remove: async (id) => {
