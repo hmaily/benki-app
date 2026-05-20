@@ -11,11 +11,13 @@ import type {
   LeagueKey,
   Profile,
   Task,
+  UserSearchResult,
 } from './types';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
 type LeaderboardRow = Database['public']['Functions']['get_leaderboard']['Returns'][number];
+type SearchRow = Database['public']['Functions']['search_profiles']['Returns'][number];
 
 const LEAGUE_KEYS: readonly LeagueKey[] = ['espresso', 'latte', 'cappuccino', 'mocha'];
 
@@ -74,6 +76,15 @@ export function toFriend(profile: Pick<ProfileRow, 'id' | 'name' | 'xp' | 'avata
     name: profile.name,
     xp: profile.xp,
     avatarUrl: profile.avatar_url,
+  };
+}
+
+export function toUserSearchResult(row: SearchRow): UserSearchResult {
+  return {
+    id: row.id,
+    name: row.name,
+    avatarUrl: row.avatar_url,
+    xp: row.xp,
   };
 }
 

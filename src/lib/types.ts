@@ -24,6 +24,14 @@ export interface FriendRequest {
   avatarUrl: string | null;
 }
 
+/** A profile surfaced by friend search — not yet a friend. */
+export interface UserSearchResult {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  xp: number;
+}
+
 export interface LeaderboardEntry {
   id: string;
   rank: number;
