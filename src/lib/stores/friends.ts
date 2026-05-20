@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 
-import { toFriend, toFriendRequest } from '../mappers';
+import { toFriend, toFriendRequest, toUserSearchResult } from '../mappers';
 import { supabase } from '../supabase';
-import type { Friend, FriendRequest } from '../types';
+import type { Friend, FriendRequest, UserSearchResult } from '../types';
 import { errorMessage } from '../utils/errors';
 import { currentUserId } from './auth';
 
@@ -16,6 +16,12 @@ interface FriendsState {
   load: () => Promise<void>;
   acceptRequest: (requestId: string) => Promise<void>;
   declineRequest: (requestId: string) => Promise<void>;
+  /** Search profiles by name (excludes self and existing friends). */
+  searchUsers: (query: string) => Promise<UserSearchResult[]>;
+  /** Send a friend request to another user. */
+  sendRequest: (toUserId: string) => Promise<void>;
+  /** Ids of users the current user already has a pending outgoing request to. */
+  outgoingPendingIds: () => Promise<string[]>;
   reset: () => void;
 }
 
@@ -113,6 +119,37 @@ export const useFriends = create<FriendsState>((set, get) => ({
       set({ requests: prevRequests }); // rollback
       throw error;
     }
+  },
+
+  searchUsers: async (query) => {
+    const { data, error } = await supabase.rpc('search_profiles', {
+      p_query: query,
+    });
+    if (error) throw error;
+    return data.map(toUserSearchResult);
+  },
+
+  sendRequest: async (toUserId) => {
+    const userId = currentUserId();
+    if (!userId) throw new Error('Not signed in');
+
+    const { error } = await supabase
+      .from('friend_requests')
+      .insert({ from_user: userId, to_user: toUserId });
+    if (error) throw error;
+  },
+
+  outgoingPendingIds: async () => {
+    const userId = currentUserId();
+    if (!userId) return [];
+
+    const { data, error } = await supabase
+      .from('friend_requests')
+      .select('to_user')
+      .eq('from_user', userId)
+      .eq('status', 'pending');
+    if (error) throw error;
+    return data.map((r) => r.to_user);
   },
 
   reset: () => set({ friends: [], requests: [], status: 'idle', error: null }),

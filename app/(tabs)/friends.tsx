@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { UserPlus, Users } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -26,6 +26,7 @@ export default function FriendsScreen() {
   const accept = useFriends((s) => s.acceptRequest);
   const decline = useFriends((s) => s.declineRequest);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const [query, setQuery] = useState('');
 
@@ -64,7 +65,12 @@ export default function FriendsScreen() {
       <TopBar
         title="Friends"
         right={
-          <IconButton accessibilityLabel="Invite a friend" variant="plain" size={36}>
+          <IconButton
+            accessibilityLabel="Add friends"
+            variant="plain"
+            size={36}
+            onPress={() => router.push('/add-friends')}
+          >
             <UserPlus size={20} color={colors.text} />
           </IconButton>
         }
@@ -115,8 +121,10 @@ export default function FriendsScreen() {
                   icon={<Users size={28} color={colors.primary} />}
                   title={query ? 'No matches' : 'Your dojo is empty'}
                   description={
-                    query ? 'Try a different name.' : 'Invite a friend and study together.'
+                    query ? 'Try a different name.' : 'Find a study partner and grow together.'
                   }
+                  actionLabel={query ? undefined : 'Find friends'}
+                  onAction={query ? undefined : () => router.push('/add-friends')}
                 />
               ) : (
                 <View style={styles.list}>
