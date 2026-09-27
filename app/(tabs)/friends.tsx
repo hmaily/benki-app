@@ -13,6 +13,7 @@ import {
   TopBar,
 } from '@/components/features';
 import { Divider, IconButton, SearchBar, Skeleton } from '@/components/ui';
+import { useChat } from '@/lib/stores/chat';
 import { useFriends } from '@/lib/stores/friends';
 import { errorMessage } from '@/lib/utils/errors';
 import { colors, spacing } from '@/theme';
@@ -27,6 +28,7 @@ export default function FriendsScreen() {
   const decline = useFriends((s) => s.declineRequest);
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const unreadByThread = useChat((s) => s.unreadByThread);
 
   const [query, setQuery] = useState('');
 
@@ -130,7 +132,11 @@ export default function FriendsScreen() {
                 <View style={styles.list}>
                   {filtered.map((f, idx) => (
                     <View key={f.id}>
-                      <FriendRow friend={f} />
+                      <FriendRow
+                        friend={f}
+                        unreadCount={unreadByThread[f.id] ?? 0}
+                        onMessage={(id) => router.push(`/chat/${id}`)}
+                      />
                       {idx < filtered.length - 1 ? <Divider /> : null}
                     </View>
                   ))}
