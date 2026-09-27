@@ -5,7 +5,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ErrorState, LeagueBanner, SettingsSheet, TopBar } from '@/components/features';
+import {
+  ErrorState,
+  LeagueBanner,
+  SettingsSheet,
+  StreakCard,
+  TopBar,
+} from '@/components/features';
 import { Button, Card, Skeleton, Text } from '@/components/ui';
 import { leagueProgress } from '@/lib/leagues';
 import { useProfile } from '@/lib/stores/profile';
@@ -105,6 +111,8 @@ export default function ProfileScreen() {
             {current.label}
           </Text>
         </Card>
+
+        <StreakCard profile={profile} />
 
         <LeagueBanner xp={profile.xp} />
 

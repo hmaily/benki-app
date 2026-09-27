@@ -35,6 +35,9 @@ export function toProfile(row: ProfileRow): Profile {
     avatarUrl: row.avatar_url,
     xp: row.xp,
     league: toLeagueKey(row.league),
+    currentStreak: row.current_streak,
+    longestStreak: row.longest_streak,
+    lastCompletionDate: row.last_completion_date,
     joinedAt: row.created_at,
   };
 }

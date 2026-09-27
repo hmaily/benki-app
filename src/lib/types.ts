@@ -58,6 +58,10 @@ export interface Profile {
   avatarUrl: string | null;
   xp: number;
   league: LeagueKey;
+  currentStreak: number;
+  longestStreak: number;
+  /** UTC calendar date (YYYY-MM-DD) of the most recent completion, or null. */
+  lastCompletionDate: string | null;
   joinedAt: string;
 }
 
