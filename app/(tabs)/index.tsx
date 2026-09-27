@@ -40,12 +40,29 @@ export default function HomeScreen() {
     }, [tasksStatus, loadTasks, profile, loadProfile]),
   );
 
-  const { upcoming, missed } = useMemo(
-    () => ({
+  const { upcoming, missed, completedToday } = useMemo(() => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const startMs = startOfToday.getTime();
+    return {
       upcoming: items.filter((t) => t.status === 'upcoming'),
       missed: items.filter((t) => t.status === 'missed'),
-    }),
-    [items],
+      completedToday: items
+        .filter(
+          (t) =>
+            t.status === 'completed' &&
+            t.completedAt &&
+            new Date(t.completedAt).getTime() >= startMs,
+        )
+        .sort((a, b) =>
+          (b.completedAt ?? '').localeCompare(a.completedAt ?? ''),
+        ),
+    };
+  }, [items]);
+
+  const completedTodayXP = useMemo(
+    () => completedToday.reduce((sum, t) => sum + t.xp, 0),
+    [completedToday],
   );
 
   const handleToggle = async (id: string) => {
@@ -91,7 +108,7 @@ export default function HomeScreen() {
         }
       >
         {profile ? (
-          <HomeHero name={profile.name} xp={profile.xp} />
+          <HomeHero profile={profile} />
         ) : (
           <View style={styles.heroSkeleton}>
             <Skeleton width={96} height={96} rounded={48} />
@@ -133,6 +150,25 @@ export default function HomeScreen() {
                 </View>
               )}
             </View>
+
+            {completedToday.length > 0 ? (
+              <View style={styles.section}>
+                <SectionHeader
+                  title="Completed Today"
+                  caption={`${completedToday.length} done · +${completedTodayXP} XP`}
+                />
+                <View style={styles.list}>
+                  {completedToday.map((t) => (
+                    <TaskCard
+                      key={t.id}
+                      task={t}
+                      onToggleComplete={handleToggle}
+                      onPress={(id) => router.push(`/task/${id}`)}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : null}
 
             {missed.length > 0 ? (
               <View style={styles.section}>
