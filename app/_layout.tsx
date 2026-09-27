@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useInboxSubscription } from '@/hooks/useInboxSubscription';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useAuth } from '@/lib/stores/auth';
 import { useChat } from '@/lib/stores/chat';
 import { useFriends } from '@/lib/stores/friends';
@@ -41,6 +42,9 @@ export default function RootLayout() {
 
   // Realtime inbox subscription — no-ops until userId is set.
   useInboxSubscription();
+
+  // Push token registration + tap handling — no-ops on simulator / no EAS project.
+  usePushNotifications();
 
   // Reveal the app only when fonts and the auth check are both done.
   // The navigator below always renders so route guards can navigate;
