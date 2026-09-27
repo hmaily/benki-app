@@ -9,6 +9,7 @@ export { ProviderButton } from './ProviderButton';
 export { RankRow } from './RankRow';
 export { SectionHeader } from './SectionHeader';
 export { SettingsSheet } from './SettingsSheet';
+export { StreakCard } from './StreakCard';
 export { TaskCard } from './TaskCard';
 export { TaskForm } from './TaskForm';
 export type { TaskFormInitial, TaskFormSubmit } from './TaskForm';
