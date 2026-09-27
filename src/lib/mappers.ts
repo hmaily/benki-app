@@ -9,6 +9,7 @@ import type {
   FriendRequest,
   LeaderboardEntry,
   LeagueKey,
+  Message,
   Profile,
   Task,
   UserSearchResult,
@@ -16,6 +17,7 @@ import type {
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 type TaskRow = Database['public']['Tables']['tasks']['Row'];
+type MessageRow = Database['public']['Tables']['messages']['Row'];
 type LeaderboardRow = Database['public']['Functions']['get_leaderboard']['Returns'][number];
 type SearchRow = Database['public']['Functions']['search_profiles']['Returns'][number];
 
@@ -88,6 +90,17 @@ export function toUserSearchResult(row: SearchRow): UserSearchResult {
     name: row.name,
     avatarUrl: row.avatar_url,
     xp: row.xp,
+  };
+}
+
+export function toMessage(row: MessageRow): Message {
+  return {
+    id: row.id,
+    senderId: row.sender_id,
+    recipientId: row.recipient_id,
+    body: row.body,
+    createdAt: row.created_at,
+    readAt: row.read_at,
   };
 }
 
