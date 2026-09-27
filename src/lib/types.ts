@@ -66,3 +66,12 @@ export interface Profile {
 }
 
 export type AuthProvider = 'google' | 'apple' | 'email';
+
+export interface Message {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  createdAt: string;
+  readAt: string | null;
+}

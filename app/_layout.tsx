@@ -12,7 +12,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useInboxSubscription } from '@/hooks/useInboxSubscription';
 import { useAuth } from '@/lib/stores/auth';
+import { useChat } from '@/lib/stores/chat';
 import { useFriends } from '@/lib/stores/friends';
 import { useLeaderboard } from '@/lib/stores/leaderboard';
 import { useProfile } from '@/lib/stores/profile';
@@ -37,6 +39,9 @@ export default function RootLayout() {
   // Hydrate the session and subscribe to auth changes once.
   useEffect(() => init(), [init]);
 
+  // Realtime inbox subscription — no-ops until userId is set.
+  useInboxSubscription();
+
   // Reveal the app only when fonts and the auth check are both done.
   // The navigator below always renders so route guards can navigate;
   // the splash screen covers any pre-ready frames.
@@ -53,6 +58,7 @@ export default function RootLayout() {
       useProfile.getState().reset();
       useFriends.getState().reset();
       useLeaderboard.getState().reset();
+      useChat.getState().reset();
     }
   }, [status]);
 
@@ -78,6 +84,7 @@ export default function RootLayout() {
             options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
           />
           <Stack.Screen name="task/[id]" options={{ animation: 'slide_from_right' }} />
+          <Stack.Screen name="chat/[friendId]" options={{ animation: 'slide_from_right' }} />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>
